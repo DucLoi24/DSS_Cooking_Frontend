@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react"; // Import thêm useMemo
+import { useEffect, useState, useMemo, useCallback } from "react"; // Import thêm useCallback
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store";
 import apiFetch from "@/lib/api";
@@ -11,7 +11,6 @@ import { AddShoppingListItemForm } from "@/components/shopping-list/add-shopping
 import { Check, Trash, PlusCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Cập nhật interface để có cả quantity
 interface ShoppingListItem {
   id: number;
   ingredient_name: string;
@@ -33,19 +32,24 @@ export default function ShoppingListPage() {
     setIsClient(true);
   }, []);
 
-  const fetchItems = async () => {
+  // SỬA LỖI #2: Bọc hàm fetchItems trong useCallback
+  const fetchItems = useCallback(async () => {
     if (!accessToken) return;
     try {
       const response = await apiFetch("/shopping-list/");
       if (!response.ok) throw new Error("Không thể tải danh sách mua sắm.");
       const data = await response.json();
       setItems(data);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) { // SỬA LỖI #1: Dùng `unknown`
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Đã có lỗi không xác định xảy ra.");
+      }
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [accessToken]); // Hàm này phụ thuộc vào accessToken
 
   useEffect(() => {
     if (isClient) {
@@ -55,16 +59,14 @@ export default function ShoppingListPage() {
         fetchItems();
       }
     }
-  }, [isClient, accessToken, router]);
-  
-  // SỬA ĐỔI #1: Sắp xếp lại danh sách một cách thông minh
+  }, [isClient, accessToken, router, fetchItems]); // Thêm fetchItems vào dependency array
+
   const sortedItems = useMemo(() => {
     return [...items].sort((a, b) => {
-      // So sánh dựa trên is_checked (false đứng trước true)
       if (a.is_checked === b.is_checked) return 0;
       return a.is_checked ? 1 : -1;
     });
-  }, [items]); // Chỉ tính toán lại khi `items` thay đổi
+  }, [items]);
 
   const handleToggleCheck = async (item: ShoppingListItem) => {
     try {
@@ -128,7 +130,7 @@ export default function ShoppingListPage() {
           <CardTitle>Cần mua</CardTitle>
         </CardHeader>
         <CardContent>
-          {sortedItems.length > 0 ? ( // SỬA ĐỔI #2: Dùng danh sách đã sắp xếp
+          {sortedItems.length > 0 ? (
             <ul>
               {sortedItems.map((item) => (
                 <li key={item.id} className="flex justify-between items-center p-4 border-b">
@@ -136,7 +138,6 @@ export default function ShoppingListPage() {
                     <span className={cn("font-medium", item.is_checked && "line-through text-muted-foreground")}>
                       {item.ingredient_name}
                     </span>
-                     {/* Hiển thị số lượng */}
                     {item.quantity && (
                       <span className="text-sm text-muted-foreground">{item.quantity}</span>
                     )}

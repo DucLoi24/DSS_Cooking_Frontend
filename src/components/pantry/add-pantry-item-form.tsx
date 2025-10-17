@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAuthStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,8 +20,7 @@ interface AddPantryItemFormProps {
 }
 
 export function AddPantryItemForm({ onItemAdded }: AddPantryItemFormProps) {
-  // SỬA LỖI Ở ĐÂY: Lấy đúng tên `accessToken` từ store
-  const { accessToken } = useAuthStore();
+  // SỬA LỖI: Xóa accessToken không sử dụng
   const [masterIngredients, setMasterIngredients] = useState<Ingredient[]>([]);
   const [selectedIngredient, setSelectedIngredient] = useState<number | null>(null);
   const [quantity, setQuantity] = useState("");
@@ -48,8 +46,6 @@ export function AddPantryItemForm({ onItemAdded }: AddPantryItemFormProps) {
     }
 
     try {
-      // Chúng ta đã dùng apiFetch ở đây, nó đã tự động lấy token từ store rồi
-      // nên không cần truyền `accessToken` vào header nữa.
       const response = await apiFetch("/pantry/", {
         method: "POST",
         body: JSON.stringify({

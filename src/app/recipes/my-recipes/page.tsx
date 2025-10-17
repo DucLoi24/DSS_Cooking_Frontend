@@ -1,5 +1,3 @@
-// src/app/recipes/my-recipes/page.tsx
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -38,8 +36,12 @@ export default function MyRecipesPage() {
         }
         const data = await response.json();
         setRecipes(data);
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err: unknown) { // SỬA LỖI: Dùng `unknown` thay cho `any`
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("Đã có lỗi không xác định xảy ra.");
+        }
       } finally {
         setIsLoading(false);
       }
@@ -47,7 +49,7 @@ export default function MyRecipesPage() {
 
     fetchMyRecipes();
   }, [isClient, accessToken, router]);
-
+  
   if (!isClient || isLoading) {
     return <div className="container py-10">Đang tải công thức của bạn...</div>;
   }
@@ -63,9 +65,9 @@ export default function MyRecipesPage() {
             <Button>Viết công thức mới</Button>
         </Link>
       </div>
-
+      
       {error && <p className="text-red-500">{error}</p>}
-
+      
       {recipes.length > 0 ? (
          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {recipes.map((recipe) => (

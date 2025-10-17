@@ -35,7 +35,7 @@ export default function SuggestionsPage() {
       }
       const data: Recipe[] = await response.json();
       setSuggestions(data);
-    } catch (err: unknown) { // SỬA LỖI Ở ĐÂY: Dùng `unknown` thay cho `any`
+    } catch (err: unknown) { // SỬA LỖI: Dùng `unknown` thay cho `any`
       if (err instanceof Error) {
         setError(err.message);
       } else {
