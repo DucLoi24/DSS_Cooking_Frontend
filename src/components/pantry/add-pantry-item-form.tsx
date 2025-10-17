@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuthStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,30 +9,28 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import apiFetch from "@/lib/api"; // Import hàm fetch thông minh
+import apiFetch from "@/lib/api";
 
-// Định nghĩa hình dáng của một nguyên liệu trong Master List
 interface Ingredient {
   id: number;
   name: string;
 }
 
-// Props mà component này nhận vào: một hàm để gọi sau khi thêm thành công
 interface AddPantryItemFormProps {
   onItemAdded: () => void;
 }
 
 export function AddPantryItemForm({ onItemAdded }: AddPantryItemFormProps) {
+  // SỬA LỖI Ở ĐÂY: Lấy đúng tên `accessToken` từ store
+  const { accessToken } = useAuthStore();
   const [masterIngredients, setMasterIngredients] = useState<Ingredient[]>([]);
   const [selectedIngredient, setSelectedIngredient] = useState<number | null>(null);
   const [quantity, setQuantity] = useState("");
   const [error, setError] = useState("");
   const [openCombobox, setOpenCombobox] = useState(false);
 
-  // Lấy Master List các nguyên liệu khi component được tải
   useEffect(() => {
     const fetchMasterIngredients = async () => {
-      // Dùng fetch thường vì đây là API public
       const response = await fetch("http://127.0.0.1:8000/api/ingredients/");
       const data = await response.json();
       setMasterIngredients(data);
@@ -49,7 +48,8 @@ export function AddPantryItemForm({ onItemAdded }: AddPantryItemFormProps) {
     }
 
     try {
-      // Dùng hàm fetch thông minh
+      // Chúng ta đã dùng apiFetch ở đây, nó đã tự động lấy token từ store rồi
+      // nên không cần truyền `accessToken` vào header nữa.
       const response = await apiFetch("/pantry/", {
         method: "POST",
         body: JSON.stringify({
@@ -62,13 +62,15 @@ export function AddPantryItemForm({ onItemAdded }: AddPantryItemFormProps) {
         throw new Error("Không thể thêm nguyên liệu.");
       }
 
-      // Gọi hàm được truyền từ component cha để báo hiệu đã xong
       onItemAdded();
-      // Reset form
       setSelectedIngredient(null);
       setQuantity("");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Đã có lỗi không xác định xảy ra.");
+      }
     }
   };
 
@@ -76,7 +78,6 @@ export function AddPantryItemForm({ onItemAdded }: AddPantryItemFormProps) {
     <form onSubmit={handleSubmit} className="grid gap-4 py-4">
       <div className="grid gap-2">
         <Label htmlFor="ingredient">Nguyên liệu</Label>
-        {/* Đây là component Combobox - ô tìm kiếm thả xuống */}
         <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
           <PopoverTrigger asChild>
             <Button

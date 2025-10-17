@@ -41,28 +41,24 @@ export function ContributeIngredientForm({ onSuccess }: ContributeIngredientForm
         body: JSON.stringify({ name, description }),
       });
 
-      // --- NÂNG CẤP LOGIC XỬ LÝ LỖI ---
       if (!response.ok) {
-        // Nếu có lỗi, hãy đọc nội dung JSON của lỗi đó
         const errorData = await response.json();
-        
-        // Lấy thông báo lỗi chi tiết từ backend
-        // Lỗi validation của Django REST Framework thường có dạng { "field_name": ["error message"] }
         const specificError = errorData.name?.[0] || "Đã có lỗi không xác định xảy ra.";
-        
-        // Dịch thông báo lỗi của Django sang tiếng Việt cho thân thiện
         if (specificError.includes("already exists")) {
             throw new Error(`Nguyên liệu "${name}" đã tồn tại trong hệ thống.`);
         }
-
         throw new Error(specificError);
       }
 
       const newIngredient = await response.json();
       onSuccess(newIngredient);
 
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) { // SỬA LỖI Ở ĐÂY
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Đã có lỗi không xác định xảy ra.");
+      }
     } finally {
       setIsSubmitting(false);
     }

@@ -22,7 +22,7 @@ interface AddShoppingListItemFormProps {
 export function AddShoppingListItemForm({ onItemAdded }: AddShoppingListItemFormProps) {
   const [masterIngredients, setMasterIngredients] = useState<Ingredient[]>([]);
   const [selectedIngredient, setSelectedIngredient] = useState<number | null>(null);
-  const [quantity, setQuantity] = useState(""); // State cho số lượng
+  const [quantity, setQuantity] = useState("");
   const [error, setError] = useState("");
   const [openCombobox, setOpenCombobox] = useState(false);
 
@@ -49,7 +49,7 @@ export function AddShoppingListItemForm({ onItemAdded }: AddShoppingListItemForm
         method: "POST",
         body: JSON.stringify({
           ingredient: selectedIngredient,
-          quantity: quantity, // Gửi cả số lượng lên
+          quantity: quantity,
         }),
       });
 
@@ -59,9 +59,13 @@ export function AddShoppingListItemForm({ onItemAdded }: AddShoppingListItemForm
 
       onItemAdded();
       setSelectedIngredient(null);
-      setQuantity(""); // Reset cả số lượng
-    } catch (err: any) {
-      setError(err.message);
+      setQuantity("");
+    } catch (err: unknown) { // SỬA LỖI Ở ĐÂY
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Đã có lỗi không xác định xảy ra.");
+      }
     }
   };
 
@@ -71,19 +75,36 @@ export function AddShoppingListItemForm({ onItemAdded }: AddShoppingListItemForm
         <Label htmlFor="ingredient">Nguyên liệu</Label>
         <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
           <PopoverTrigger asChild>
-            <Button variant="outline" role="combobox" className="w-full justify-between">
-              {selectedIngredient ? masterIngredients.find((ing) => ing.id === selectedIngredient)?.name : "Chọn nguyên liệu..."}
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={openCombobox}
+              className="w-full justify-between"
+            >
+              {selectedIngredient ? masterIngredients.find((ing) => ing.id === selectedIngredient)?.name : "Chọn nguyên liệu cần mua..."}
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-[300px] p-0">
             <Command>
               <CommandInput placeholder="Tìm nguyên liệu..." />
-              <CommandEmpty>Không tìm thấy.</CommandEmpty>
+              <CommandEmpty>Không tìm thấy nguyên liệu.</CommandEmpty>
               <CommandGroup className="max-h-[200px] overflow-y-auto">
                 {masterIngredients.map((ingredient) => (
-                  <CommandItem key={ingredient.id} value={ingredient.name} onSelect={() => { setSelectedIngredient(ingredient.id); setOpenCombobox(false); }}>
-                    <Check className={cn("mr-2 h-4 w-4", selectedIngredient === ingredient.id ? "opacity-100" : "opacity-0")} />
+                  <CommandItem
+                    key={ingredient.id}
+                    value={ingredient.name}
+                    onSelect={() => {
+                      setSelectedIngredient(ingredient.id);
+                      setOpenCombobox(false);
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        selectedIngredient === ingredient.id ? "opacity-100" : "opacity-0"
+                      )}
+                    />
                     {ingredient.name}
                   </CommandItem>
                 ))}
@@ -92,8 +113,7 @@ export function AddShoppingListItemForm({ onItemAdded }: AddShoppingListItemForm
           </PopoverContent>
         </Popover>
       </div>
-       {/* Ô nhập số lượng mới */}
-      <div className="grid gap-2">
+       <div className="grid gap-2">
         <Label htmlFor="quantity">Số lượng (ví dụ: 200g, 1 quả)</Label>
         <Input
           id="quantity"
