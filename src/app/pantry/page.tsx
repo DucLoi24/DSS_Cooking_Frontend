@@ -33,11 +33,14 @@ export default function PantryPage() {
   const fetchPantryItems = useCallback(async () => {
     if (!accessToken) return;
     try {
+      // Reset trạng thái trước khi gọi API
+      setIsLoading(true);
+      setError(null);
       const response = await apiFetch("/pantry/");
       if (!response.ok) throw new Error("Không thể lấy dữ liệu từ tủ lạnh.");
       const data: PantryItem[] = await response.json();
       setItems(data);
-    } catch (err: unknown) { // SỬA LỖI: Dùng 'unknown'
+    } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
@@ -74,6 +77,11 @@ export default function PantryPage() {
 
   if (!isClient || isLoading) {
     return <div className="container py-10">Đang tải dữ liệu tủ lạnh...</div>;
+  }
+  
+  // SỬA LỖI #1: Thêm phần hiển thị lỗi
+  if (error) {
+    return <div className="container py-10 text-red-500">Lỗi: {error}</div>;
   }
 
   return (

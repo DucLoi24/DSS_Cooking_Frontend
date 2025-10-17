@@ -34,8 +34,12 @@ export default function FavoritesPage() {
         }
         const data = await response.json();
         setFavorites(data);
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err: unknown) { // SỬA LỖI #2: Dùng 'unknown'
+        if (err instanceof Error) {
+            setError(err.message);
+        } else {
+            setError("Đã có lỗi không xác định xảy ra.")
+        }
       } finally {
         setIsLoading(false);
       }
@@ -64,7 +68,8 @@ export default function FavoritesPage() {
             ))}
         </div>
       ) : (
-        <p>Bạn chưa "thả tim" cho công thức nào cả. Hãy bắt đầu khám phá nhé!</p>
+        // SỬA LỖI #3: Dùng nháy đơn để tránh lỗi
+        <p>Bạn chưa 'thả tim' cho công thức nào cả. Hãy bắt đầu khám phá nhé!</p>
       )}
     </section>
   );
