@@ -27,9 +27,6 @@ export default function Home() {
           </Button>
         </Link> */}
       </div>
-      <p className="text-red-500 font-bold">
-          DEBUG: API URL is: {process.env.NEXT_PUBLIC_API_BASE_URL || "BIẾN MÔI TRƯỜNG CHƯA ĐƯỢC SET!"}
-      </p>
     </section>
   );
 }
