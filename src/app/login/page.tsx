@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/store";
-import apiFetch from "@/lib/api"; // Import hàm fetch thông minh
+import apiFetch from "@/lib/api";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -29,7 +29,6 @@ export default function LoginPage() {
     setError("");
 
     try {
-      // BƯỚC 1: LẤY "VÉ THÔNG HÀNH" (TOKEN) - Dùng fetch thường vì chưa có token
       const loginResponse = await fetch("http://127.0.0.1:8000/api/login/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -44,11 +43,9 @@ export default function LoginPage() {
       const loginData = await loginResponse.json();
       const accessToken = loginData.access;
       const refreshToken = loginData.refresh;
-
-      // Ghi cả hai "vé" vào bộ nhớ
+      
       setTokens(accessToken, refreshToken);
 
-      // BƯỚC 2: DÙNG "VÉ" ĐỂ LẤY "DANH THIẾP" (USER INFO) - Dùng apiFetch
       const userResponse = await apiFetch("/users/me/");
 
       if (!userResponse.ok) {
@@ -56,15 +53,15 @@ export default function LoginPage() {
       }
       
       const userData = await userResponse.json();
-
-      // Ghi "danh thiếp" vào bộ nhớ
       setUser(userData);
-
-      // Chuyển hướng người dùng đến trang chủ
       router.push("/");
       
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) { // SỬA LỖI: Dùng 'unknown' thay cho 'any'
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Đã có lỗi không xác định xảy ra.");
+      }
     }
   };
 

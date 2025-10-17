@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store";
-import apiFetch from "@/lib/api"; // SỬ DỤNG "NGƯỜI GIAO HÀNG" CHUYÊN NGHIỆP
+import apiFetch from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Clock, ChefHat, User, CheckCircle2, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Định nghĩa các kiểu dữ liệu cần thiết
 interface RecipeIngredient {
   id: number;
   name: string;
@@ -51,9 +50,8 @@ export default function RecipeDetailPage() {
     if (!id) return;
     const fetchData = async () => {
       try {
-        // SỬ DỤNG Promise.all VỚI apiFetch
         const [recipeRes, pantryRes] = await Promise.all([
-          apiFetch(`/recipes/${id}/`), // Dùng apiFetch ở đây
+          apiFetch(`/recipes/${id}/`),
           accessToken ? apiFetch("/pantry/") : Promise.resolve(null)
         ]);
 
@@ -65,8 +63,12 @@ export default function RecipeDetailPage() {
           const pantryData = await pantryRes.json();
           setPantryItems(pantryData);
         }
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err: unknown) { // SỬA LỖI: Dùng 'unknown'
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("Đã có lỗi không xác định xảy ra.");
+        }
       } finally {
         setIsLoading(false);
       }
@@ -106,13 +108,11 @@ export default function RecipeDetailPage() {
 
   return (
     <section className="container py-10">
-      {/* Phần tiêu đề */}
       <div className="space-y-2 mb-8">
         <h1 className="text-4xl font-bold tracking-tight">{recipe.title}</h1>
         <p className="text-lg text-muted-foreground">{recipe.description}</p>
       </div>
 
-      {/* Phần thông tin meta */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground mb-8">
         <div className="flex items-center"><User className="mr-1 h-4 w-4" /> Tác giả: {recipe.author_name}</div>
         <div className="flex items-center"><Clock className="mr-1 h-4 w-4" /> {recipe.cooking_time_minutes} phút</div>
@@ -120,7 +120,6 @@ export default function RecipeDetailPage() {
       </div>
 
       <div className="grid gap-8 md:grid-cols-3">
-        {/* Cột nguyên liệu */}
         <div className="md:col-span-1 flex flex-col gap-4">
           <Card>
             <CardHeader><CardTitle>Nguyên liệu cần chuẩn bị</CardTitle></CardHeader>
@@ -150,8 +149,6 @@ export default function RecipeDetailPage() {
           )}
 
         </div>
-
-        {/* Cột hướng dẫn */}
         <div className="md:col-span-2">
            <Card>
             <CardHeader><CardTitle>Các bước thực hiện</CardTitle></CardHeader>

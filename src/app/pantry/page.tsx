@@ -1,16 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AddPantryItemForm } from "@/components/pantry/add-pantry-item-form";
-import { PlusCircle } from "lucide-react";
-import apiFetch from "@/lib/api"; // Import hàm fetch thông minh
+import { PlusCircle, Trash } from "lucide-react";
+import apiFetch from "@/lib/api";
 
-// Định nghĩa "hình dáng" của một item trong tủ lạnh
 interface PantryItem {
   id: number;
   ingredient_name: string;
@@ -31,50 +30,50 @@ export default function PantryPage() {
     setIsClient(true);
   }, []);
 
-  const fetchPantryItems = async () => {
-    // Không cần kiểm tra token ở đây nữa vì apiFetch sẽ lo
+  const fetchPantryItems = useCallback(async () => {
+    if (!accessToken) return;
     try {
-      setIsLoading(true);
-      setError(null);
-      // Dùng hàm fetch thông minh
       const response = await apiFetch("/pantry/");
-      
-      if (!response.ok) {
-        // apiFetch sẽ tự xử lý lỗi 401, nhưng các lỗi khác (500) vẫn cần xử lý
-        throw new Error("Không thể lấy dữ liệu từ tủ lạnh.");
-      }
+      if (!response.ok) throw new Error("Không thể lấy dữ liệu từ tủ lạnh.");
       const data: PantryItem[] = await response.json();
       setItems(data);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) { // SỬA LỖI: Dùng 'unknown'
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Đã có lỗi không xác định xảy ra.");
+      }
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [accessToken]);
 
   useEffect(() => {
-    if (!isClient) return;
-
-    // Logic kiểm tra đăng nhập vẫn cần thiết để tránh gọi API vô ích
-    if (!accessToken) {
-      router.push("/login");
-      return;
+    if (isClient) {
+      if (!accessToken) {
+        router.push("/login");
+      } else {
+        fetchPantryItems();
+      }
     }
-    
-    fetchPantryItems();
-  }, [isClient, accessToken, router]);
+  }, [isClient, accessToken, router, fetchPantryItems]);
 
   const handleItemAdded = () => {
     setIsDialogOpen(false);
     fetchPantryItems();
   };
+  
+  const handleDelete = async (itemId: number) => {
+    try {
+      await apiFetch(`/pantry/${itemId}/`, { method: 'DELETE' });
+      setItems(prevItems => prevItems.filter(item => item.id !== itemId));
+    } catch (error) {
+        console.error("Failed to delete item", error);
+    }
+  };
 
   if (!isClient || isLoading) {
     return <div className="container py-10">Đang tải dữ liệu tủ lạnh...</div>;
-  }
-
-  if (error) {
-    return <div className="container py-10 text-red-500">Lỗi: {error}</div>;
   }
 
   return (
@@ -112,9 +111,14 @@ export default function PantryPage() {
           {items.length > 0 ? (
             <ul>
               {items.map((item) => (
-                <li key={item.id} className="flex justify-between items-center p-2 border-b">
-                  <span>{item.ingredient_name}</span>
-                  <span className="text-sm text-muted-foreground">{item.quantity}</span>
+                <li key={item.id} className="flex justify-between items-center p-2 border-b group">
+                  <div>
+                    <span className="font-medium">{item.ingredient_name}</span>
+                    {item.quantity && <span className="text-sm text-muted-foreground ml-2">{item.quantity}</span>}
+                  </div>
+                  <Button variant="ghost" size="icon" className="invisible group-hover:visible" onClick={() => handleDelete(item.id)}>
+                    <Trash className="h-4 w-4 text-red-500" />
+                  </Button>
                 </li>
               ))}
             </ul>
