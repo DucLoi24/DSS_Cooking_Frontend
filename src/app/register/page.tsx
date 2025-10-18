@@ -15,6 +15,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 
+// Add BASE_URL constant (reads from env with a fallback)
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
+
 export default function RegisterPage() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -29,7 +32,7 @@ export default function RegisterPage() {
     setSuccess("");
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/register/", {
+      const response = await fetch(`${BASE_URL}/api/register/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

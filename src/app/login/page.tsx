@@ -16,6 +16,9 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/store";
 
+// Add BASE_URL constant (reads from env with a fallback)
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
+
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -29,7 +32,7 @@ export default function LoginPage() {
 
     try {
       // BƯỚC 1: LẤY TOKEN
-      const loginResponse = await fetch("http://127.0.0.1:8000/api/login/", {
+      const loginResponse = await fetch(`${BASE_URL}/api/login/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
@@ -49,7 +52,7 @@ export default function LoginPage() {
 
       // --- SỬA LỖI Ở ĐÂY: DÙNG FETCH TRỰC TIẾP, KHÔNG DÙNG APIFETCH ---
       // Chúng ta sẽ tự mình thực hiện cuộc gọi lấy thông tin user một cách tường minh.
-      const userResponse = await fetch("http://127.0.0.1:8000/api/users/me/", {
+      const userResponse = await fetch(`${BASE_URL}/api/users/me/`, {
         method: "GET",
         headers: {
           // Gắn "vé thông hành" mới nhận được vào header
