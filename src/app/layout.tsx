@@ -5,6 +5,8 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
+// Import Toaster từ thư viện mới
+import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,9 +21,6 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    // "Tấm biển" này ra lệnh cho React: "Hãy bỏ qua các lỗi bất đối xứng
-    // về thuộc tính trên thẻ html này. Tôi biết có thể có tiện ích mở rộng
-    // đang can thiệp và tôi chấp nhận điều đó."
     <html lang="en" suppressHydrationWarning>
       <body
         className={cn(
@@ -34,6 +33,8 @@ export default function RootLayout({
           <main className="flex-1">{children}</main>
           <Footer />
         </div>
+        {/* Đặt "Loa phát thanh" Sonner ở đây. Nó thông minh và hiệu quả hơn. */}
+        <Toaster richColors />
       </body>
     </html>
   );

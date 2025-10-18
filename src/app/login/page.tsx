@@ -15,7 +15,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/store";
-import apiFetch from "@/lib/api"; // Vẫn import apiFetch để dùng cho users/me
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -24,19 +23,13 @@ export default function LoginPage() {
   const router = useRouter();
   const { setTokens, setUser } = useAuthStore();
 
-  // ĐỊNH NGHĨA LẠI BASE URL MỘT CÁCH TƯỜNG MINH Ở ĐÂY
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
-
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
 
-    // In ra URL để debug ngay trước khi gọi
-    console.log(`Đang cố gắng đăng nhập đến: ${API_BASE_URL}/api/login/`);
-
     try {
-      // SỬ DỤNG URL ĐÃ ĐƯỢC ĐỊNH NGHĨA TƯỜNG MINH
-      const loginResponse = await fetch(`${API_BASE_URL}/api/login/`, {
+      // BƯỚC 1: LẤY TOKEN
+      const loginResponse = await fetch("http://127.0.0.1:8000/api/login/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
@@ -50,18 +43,33 @@ export default function LoginPage() {
       const loginData = await loginResponse.json();
       const accessToken = loginData.access;
       const refreshToken = loginData.refresh;
-      
+
+      // Ghi token vào bộ nhớ
       setTokens(accessToken, refreshToken);
 
-      // apiFetch vẫn hữu ích ở đây vì nó sẽ tự động đính kèm token
-      const userResponse = await apiFetch("/users/me/");
+      // --- SỬA LỖI Ở ĐÂY: DÙNG FETCH TRỰC TIẾP, KHÔNG DÙNG APIFETCH ---
+      // Chúng ta sẽ tự mình thực hiện cuộc gọi lấy thông tin user một cách tường minh.
+      const userResponse = await fetch("http://127.0.0.1:8000/api/users/me/", {
+        method: "GET",
+        headers: {
+          // Gắn "vé thông hành" mới nhận được vào header
+          "Authorization": `Bearer ${accessToken}`,
+        },
+      });
 
       if (!userResponse.ok) {
-        throw new Error("Không thể lấy thông tin người dùng.");
+        // Nếu vẫn lỗi ở đây, thì đây là một lỗi thực sự từ backend (ví dụ: cấu hình JWT sai)
+        const errorText = await userResponse.text();
+        console.error("Lỗi khi lấy thông tin user:", errorText);
+        throw new Error("Không thể xác thực và lấy thông tin người dùng sau khi đăng nhập.");
       }
       
       const userData = await userResponse.json();
+
+      // Ghi thông tin user vào bộ nhớ
       setUser(userData);
+
+      // Chuyển hướng
       router.push("/");
       
     } catch (err: unknown) {
@@ -78,8 +86,6 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit}>
         <Card className="w-full max-w-sm">
           <CardHeader>
-            {/* Thêm dòng debug này để xem biến môi trường ngay trên giao diện */}
-            <p className="text-xs text-red-500">DEBUG URL: {API_BASE_URL}</p>
             <CardTitle className="text-2xl">Đăng nhập</CardTitle>
             <CardDescription>
               Nhập tên đăng nhập và mật khẩu của bạn để tiếp tục.

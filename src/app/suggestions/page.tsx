@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store";
 import apiFetch from "@/lib/api";
@@ -17,25 +17,45 @@ export default function SuggestionsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const [favoriteIds, setFavoriteIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  const fetchFavorites = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+        const response = await apiFetch("/favorites/");
+        if(response.ok) {
+            const favoriteRecipes: Recipe[] = await response.json();
+            setFavoriteIds(new Set(favoriteRecipes.map(r => r.id)));
+        }
+    } catch (error) {
+        console.error("Failed to fetch favorites:", error);
+    }
+  }, [accessToken]);
 
   const handleFetchSuggestions = async () => {
     setIsLoading(true);
     setError(null);
     setSuggestions([]);
     setHasSearched(true);
-
     try {
-      const response = await apiFetch("/suggestions/");
-      if (!response.ok) {
+      const [suggestionsRes, favoritesRes] = await Promise.all([
+          apiFetch("/suggestions/"),
+          apiFetch("/favorites/")
+      ]);
+      if (!suggestionsRes.ok) {
         throw new Error("Không thể lấy gợi ý món ăn.");
       }
-      const data: Recipe[] = await response.json();
+      if (favoritesRes.ok) {
+          const favoriteRecipes: Recipe[] = await favoritesRes.json();
+          setFavoriteIds(new Set(favoriteRecipes.map(r => r.id)));
+      }
+      const data: Recipe[] = await suggestionsRes.json();
       setSuggestions(data);
-    } catch (err: unknown) { // SỬA LỖI: Dùng `unknown` thay cho `any`
+    } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
@@ -75,10 +95,10 @@ export default function SuggestionsPage() {
           Khám phá Món ăn
         </h1>
         <p className="max-w-[700px] text-lg text-muted-foreground">
-          Dựa trên những gì bạn có trong tủ lạnh, đây là những gợi ý dành cho bạn.
+          Sẵn sàng nấu ăn? Bấm nút để bộ não AI của chúng tôi tìm món phù hợp nhất!
         </p>
-        <Button onClick={handleFetchSuggestions} disabled={isLoading}>
-          {isLoading ? "Đang tìm kiếm..." : "Tìm món ăn ngay!"}
+        <Button onClick={handleFetchSuggestions} disabled={isLoading} size="lg">
+          {isLoading ? "Đang suy nghĩ..." : "Tìm món ăn ngay!"}
         </Button>
       </div>
 
@@ -92,16 +112,22 @@ export default function SuggestionsPage() {
             <RecipeCardSkeleton />
           </>
         ) : (
-          suggestions.map((recipe) => (
-            <RecipeCard key={recipe.id} recipe={recipe} />
+          suggestions.map((recipe, index) => (
+            <RecipeCard 
+              key={recipe.id} 
+              recipe={recipe} 
+              rank={index + 1}
+              isInitiallyFavorited={favoriteIds.has(recipe.id)}
+              onFavoriteToggle={fetchFavorites}
+            />
           ))
         )}
       </div>
       
       {!isLoading && hasSearched && suggestions.length === 0 && (
-         <div className="text-center py-10 border rounded-md">
+         <div className="text-center py-10 border rounded-md col-span-full">
             <h3 className="font-semibold">Không tìm thấy món ăn phù hợp</h3>
-            <p className="text-sm text-muted-foreground">Hãy thử thêm nguyên liệu vào tủ lạnh của bạn nhé!</p>
+            <p className="text-sm text-muted-foreground">Có vẻ như không có món nào khớp với nguyên liệu của bạn. Hãy thử thêm đồ vào tủ lạnh nhé!</p>
          </div>
       )}
     </section>

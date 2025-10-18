@@ -7,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AddPantryItemForm } from "@/components/pantry/add-pantry-item-form";
-import { PlusCircle, Trash } from "lucide-react";
+import { PlusCircle, Trash, Sparkles } from "lucide-react"; // Import thêm icon Sparkles
 import apiFetch from "@/lib/api";
+import Link from "next/link"; // Import Link để điều hướng
 
 interface PantryItem {
   id: number;
@@ -33,7 +34,6 @@ export default function PantryPage() {
   const fetchPantryItems = useCallback(async () => {
     if (!accessToken) return;
     try {
-      // Reset trạng thái trước khi gọi API
       setIsLoading(true);
       setError(null);
       const response = await apiFetch("/pantry/");
@@ -79,13 +79,13 @@ export default function PantryPage() {
     return <div className="container py-10">Đang tải dữ liệu tủ lạnh...</div>;
   }
   
-  // SỬA LỖI #1: Thêm phần hiển thị lỗi
   if (error) {
     return <div className="container py-10 text-red-500">Lỗi: {error}</div>;
   }
 
   return (
     <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
+      {/* --- KHU VỰC ĐIỀU KHIỂN ĐÃ ĐƯỢC NÂNG CẤP --- */}
       <div className="flex items-center justify-between">
         <div className="flex max-w-[980px] flex-col items-start gap-2">
           <h1 className="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">
@@ -95,20 +95,34 @@ export default function PantryPage() {
             Đây là những nguyên liệu bạn đang có.
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Thêm nguyên liệu
+        
+        {/* Nhóm các nút hành động lại với nhau */}
+        <div className="flex items-center gap-4">
+          {/* Nút Gợi ý món ăn mới */}
+          <Link href="/suggestions" passHref>
+            <Button disabled={items.length === 0}>
+              <Sparkles className="mr-2 h-4 w-4" />
+              Gợi ý món ăn
             </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Thêm nguyên liệu vào tủ lạnh</DialogTitle>
-            </DialogHeader>
-            <AddPantryItemForm onItemAdded={handleItemAdded} />
-          </DialogContent>
-        </Dialog>
+          </Link>
+
+          {/* Nút Thêm nguyên liệu */}
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Thêm nguyên liệu
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Thêm nguyên liệu vào tủ lạnh</DialogTitle>
+              </DialogHeader>
+              <AddPantryItemForm onItemAdded={handleItemAdded} />
+            </DialogContent>
+          </Dialog>
+        </div>
+
       </div>
 
       <Card>
