@@ -71,9 +71,12 @@ export function RecipeForm() {
         name: "ingredients",
     });
 
+    // Add BASE_URL constant (reads from env with a fallback)
+    const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
+
     useEffect(() => {
         const fetchMasterIngredients = async () => {
-            const response = await fetch("http://127.0.0.1:8000/api/ingredients/");
+            const response = await fetch(`${BASE_URL}/api/ingredients/`);
             const data = await response.json();
             setMasterIngredients(data);
         };
