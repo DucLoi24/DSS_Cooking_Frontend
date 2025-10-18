@@ -28,7 +28,7 @@ export function AddShoppingListItemForm({ onItemAdded }: AddShoppingListItemForm
 
   useEffect(() => {
     const fetchMasterIngredients = async () => {
-      const response = await fetch("http://127.0.0.1:8000/api/ingredients/");
+      const response = await apiFetch("/ingredients/");
       const data = await response.json();
       setMasterIngredients(data);
     };

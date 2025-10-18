@@ -29,7 +29,8 @@ export function AddPantryItemForm({ onItemAdded }: AddPantryItemFormProps) {
 
   useEffect(() => {
     const fetchMasterIngredients = async () => {
-      const response = await fetch("http://127.0.0.1:8000/api/ingredients/");
+      // Sử dụng apiFetch để tận dụng BASE URL đã cấu hình trong lib/api
+      const response = await apiFetch("/ingredients/");
       const data = await response.json();
       setMasterIngredients(data);
     };
