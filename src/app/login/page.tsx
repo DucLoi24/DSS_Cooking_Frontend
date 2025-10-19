@@ -3,21 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/store";
-
-// Add BASE_URL constant (reads from env with a fallback)
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
+import apiFetch from "@/lib/api";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -25,14 +16,13 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const router = useRouter();
   const { setTokens, setUser } = useAuthStore();
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
-
     try {
-      // BƯỚC 1: LẤY TOKEN
-      const loginResponse = await fetch(`${BASE_URL}/api/login/`, {
+      const loginResponse = await fetch(`${API_BASE_URL}/api/login/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
@@ -46,36 +36,18 @@ export default function LoginPage() {
       const loginData = await loginResponse.json();
       const accessToken = loginData.access;
       const refreshToken = loginData.refresh;
-
-      // Ghi token vào bộ nhớ
       setTokens(accessToken, refreshToken);
 
-      // --- SỬA LỖI Ở ĐÂY: DÙNG FETCH TRỰC TIẾP, KHÔNG DÙNG APIFETCH ---
-      // Chúng ta sẽ tự mình thực hiện cuộc gọi lấy thông tin user một cách tường minh.
-      const userResponse = await fetch(`${BASE_URL}/api/users/me/`, {
-        method: "GET",
-        headers: {
-          // Gắn "vé thông hành" mới nhận được vào header
-          "Authorization": `Bearer ${accessToken}`,
-        },
-      });
-
+      const userResponse = await apiFetch("/users/me/", { token: accessToken });
       if (!userResponse.ok) {
-        // Nếu vẫn lỗi ở đây, thì đây là một lỗi thực sự từ backend (ví dụ: cấu hình JWT sai)
         const errorText = await userResponse.text();
         console.error("Lỗi khi lấy thông tin user:", errorText);
         throw new Error("Không thể xác thực và lấy thông tin người dùng sau khi đăng nhập.");
       }
-      
       const userData = await userResponse.json();
-
-      // Ghi thông tin user vào bộ nhớ
       setUser(userData);
-
-      // Chuyển hướng
       router.push("/");
-      
-    } catch (err: unknown) {
+    } catch (err: unknown) { // SỬA LỖI ANY
       if (err instanceof Error) {
         setError(err.message);
       } else {
@@ -97,24 +69,11 @@ export default function LoginPage() {
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="username">Tên đăng nhập</Label>
-              <Input
-                id="username"
-                type="text"
-                placeholder="usermoi123"
-                required
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
+              <Input id="username" type="text" placeholder="usermoi123" required value={username} onChange={(e) => setUsername(e.target.value)} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="password">Mật khẩu</Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
           </CardContent>
           <CardFooter className="flex flex-col items-start">
@@ -122,9 +81,7 @@ export default function LoginPage() {
             <Button className="w-full" type="submit">Đăng nhập</Button>
             <div className="mt-4 text-center text-sm w-full">
               Chưa có tài khoản?{" "}
-              <Link href="/register" className="underline">
-                Đăng ký
-              </Link>
+              <Link href="/register" className="underline">Đăng ký</Link>
             </div>
           </CardFooter>
         </Card>

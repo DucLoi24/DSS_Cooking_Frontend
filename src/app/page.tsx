@@ -1,19 +1,16 @@
-"use client"; // Cần thiết để có thể đọc trạng thái đăng nhập
+"use client";
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { useAuthStore } from "@/lib/store"; // Import "bộ nhớ"
+import { useAuthStore } from "@/lib/store";
 import { Sparkles, Refrigerator } from "lucide-react";
 
 export default function HomePage() {
-  // Đọc "trí nhớ" để biết người dùng đã đăng nhập hay chưa
   const { accessToken, user } = useAuthStore();
 
   return (
     <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
-      {/* Sử dụng toán tử 3 ngôi để hiển thị giao diện tương ứng */}
       {accessToken && user ? (
-        // GIAO DIỆN KHI ĐÃ ĐĂNG NHẬP
         <div className="flex max-w-[980px] flex-col items-start gap-4">
           <h1 className="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">
             Chào mừng trở lại, {user.username}!
@@ -37,9 +34,9 @@ export default function HomePage() {
           </div>
         </div>
       ) : (
-        // GIAO DIỆN KHI CHƯA ĐĂNG NHẬP (Giữ nguyên như cũ)
         <>
           <div className="flex max-w-[980px] flex-col items-start gap-2">
+            {/* SỬA LỖI UNESCAPED ENTITIES */}
             <h1 className="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">
               Hết băn khoăn &quot;Hôm nay ăn gì?&quot;
             </h1>
