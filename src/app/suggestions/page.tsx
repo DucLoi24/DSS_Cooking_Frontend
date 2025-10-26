@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { RecipeCard, Recipe } from "@/components/recipes/recipe-card";
 import { RecipeCardSkeleton } from "@/components/recipes/recipe-card-skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+// Import "Bộ lọc Kiêng cữ" mới
+import { ExclusionFilter } from "@/components/suggestions/exclusion-filter";
 
 export default function SuggestionsPage() {
   const { accessToken } = useAuthStore();
@@ -15,10 +17,12 @@ export default function SuggestionsPage() {
   const [isClient, setIsClient] = useState(false);
 
   const [suggestions, setSuggestions] = useState<Recipe[]>([]);
-  const [isLoading, setIsLoading] = useState(true); // Bắt đầu ở trạng thái tải
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<'strict' | 'flexible'>('strict');
   const [favoriteIds, setFavoriteIds] = useState<Set<number>>(new Set());
+  // State mới cho "Danh sách đen"
+  const [excludedIds, setExcludedIds] = useState<Set<number>>(new Set());
 
   useEffect(() => { setIsClient(true); }, []);
 
@@ -30,17 +34,23 @@ export default function SuggestionsPage() {
             const favoriteRecipes: Recipe[] = await response.json();
             setFavoriteIds(new Set(favoriteRecipes.map(r => r.id)));
         }
-    } catch (error) {
-        console.error("Failed to fetch favorites:", error);
-    }
+    } catch (error) { console.error("Failed to fetch favorites:", error); }
   }, [accessToken]);
 
-  const fetchSuggestions = useCallback(async (currentMode: string) => {
+  // Nâng cấp hàm gọi API
+  const fetchSuggestions = useCallback(async (currentMode: string, currentExclusions: Set<number>) => {
     setIsLoading(true);
     setError(null);
     try {
+      // Xây dựng query params
+      const params = new URLSearchParams();
+      params.append('mode', currentMode);
+      currentExclusions.forEach(id => {
+        params.append('exclude', id.toString());
+      });
+
       const [suggestionsRes, favoritesRes] = await Promise.all([
-        apiFetch(`/suggestions/?mode=${currentMode}`),
+        apiFetch(`/suggestions/?${params.toString()}`),
         apiFetch("/favorites/")
       ]);
 
@@ -53,6 +63,7 @@ export default function SuggestionsPage() {
         const favoriteData = await favoritesRes.json();
         setFavoriteIds(new Set(favoriteData.map((r: Recipe) => r.id)));
       }
+      
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message);
       else setError("Lỗi không xác định");
@@ -66,19 +77,25 @@ export default function SuggestionsPage() {
       if (!accessToken) {
         router.push("/login");
       } else {
-        fetchSuggestions('strict');
+        // Tự động tìm kiếm khi vào trang
+        fetchSuggestions('strict', excludedIds);
       }
     }
-  }, [isClient, accessToken, router, fetchSuggestions]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isClient, accessToken, router]); // Bỏ dependency 'fetchSuggestions' và 'excludedIds' để tránh gọi lại vô tận
 
   const handleTabChange = (newMode: string) => {
     setMode(newMode as 'strict' | 'flexible');
-    fetchSuggestions(newMode);
+    fetchSuggestions(newMode, excludedIds);
   };
   
-  if (!isClient) {
-    return <div className="container py-10">Đang tải...</div>;
+  const handleExclusionChange = (newIds: Set<number>) => {
+    setExcludedIds(newIds);
+    // Tự động tìm kiếm lại ngay khi danh sách đen thay đổi
+    fetchSuggestions(mode, newIds);
   }
+  
+  if (!isClient) return <div className="container py-10">Đang tải...</div>;
 
   return (
     <section className="container py-10">
@@ -87,11 +104,18 @@ export default function SuggestionsPage() {
         <p className="text-muted-foreground">&quot;Bộ não&quot; AI sẽ tìm những món ăn phù hợp nhất từ tủ lạnh của bạn.</p>
       </div>
 
+      {/* Sửa lại cấu trúc <Tabs> cho đúng */}
       <Tabs value={mode} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
-          <TabsTrigger value="strict">Nấu Ngay</TabsTrigger>
-          <TabsTrigger value="flexible">Thêm Chút Nữa</TabsTrigger>
-        </TabsList>
+        <div className="flex flex-col md:flex-row gap-4 mb-4">
+          <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
+            <TabsTrigger value="strict">Nấu Ngay</TabsTrigger>
+            <TabsTrigger value="flexible">Thêm Chút Nữa</TabsTrigger>
+          </TabsList>
+          {/* Thêm "Bộ lọc Kiêng cữ" vào đây */}
+          <ExclusionFilter selectedIds={excludedIds} onChange={handleExclusionChange} />
+        </div>
+
+        {/* Đặt TabsContent BÊN TRONG <Tabs> */}
         <TabsContent value="strict">
           {renderSuggestions("Bạn có đủ nguyên liệu (trừ gia vị cơ bản) để nấu những món này!")}
         </TabsContent>
