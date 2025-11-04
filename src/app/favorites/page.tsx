@@ -86,7 +86,7 @@ export default function FavoritesPage() {
             ))}
         </div>
       ) : (
-        <p>Bạn chưa 'thả tim' cho công thức nào cả. Hãy bắt đầu khám phá nhé!</p>
+        <p>Bạn chưa {`'thả tim'`} cho công thức nào cả. Hãy bắt đầu khám phá nhé!</p>
       )}
     </section>
   );

@@ -24,7 +24,7 @@ const apiFetch = async (endpoint: string, options: RequestInit & { token?: strin
 
     console.log(`Sending request to: ${url}`); // Thêm log để debug
 
-    const { token, ...fetchOptions } = options;
+    const { ...fetchOptions } = options;
     const config: RequestInit = { ...fetchOptions, headers };
 
     let response = await fetch(url, config);

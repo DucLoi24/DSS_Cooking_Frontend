@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store";
 import apiFetch from "@/lib/api";
-import { Button } from "@/components/ui/button";
 import { RecipeCard, Recipe } from "@/components/recipes/recipe-card";
 import { RecipeCardSkeleton } from "@/components/recipes/recipe-card-skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

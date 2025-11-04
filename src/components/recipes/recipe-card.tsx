@@ -71,7 +71,7 @@ export function RecipeCard({ recipe, rank, isInitiallyFavorited = false, onFavor
         if(onFavoriteToggle) onFavoriteToggle();
 
     } catch (error) {
-        toast.error("Lỗi", { description: "Đã có lỗi xảy ra, vui lòng thử lại." });
+        toast.error("Lỗi", { description: error instanceof Error ? error.message : "Đã có lỗi xảy ra, vui lòng thử lại." });
     } finally {
         setIsToggling(false);
     }

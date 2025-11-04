@@ -81,7 +81,7 @@ export function RecipeForm() {
             setMasterIngredients(data);
         };
         fetchMasterIngredients();
-    }, []);
+    }, [BASE_URL]);
 
     const onSubmit: SubmitHandler<RecipeFormValues> = async (values) => {
         try {
@@ -163,4 +163,3 @@ export function RecipeForm() {
         </>
     );
 }
-
