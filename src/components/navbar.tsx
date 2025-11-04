@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useAuthStore } from "@/lib/store";
 import { Button } from "./ui/button";
 import { useRouter } from "next/navigation";
+import { ThemeToggle } from "./theme-toggle";
 
 export function Navbar() {
   const router = useRouter();
@@ -38,6 +39,8 @@ export function Navbar() {
         </div>
 
         <div className="flex flex-1 items-center justify-end space-x-4">
+          {/* Thêm ThemeToggle vào đây */}
+          <ThemeToggle />
           {accessToken ? (
             <>
               {user && <span className="hidden sm:inline-block text-sm font-medium">Xin chào, {user.username}!</span>}

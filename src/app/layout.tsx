@@ -7,6 +7,7 @@ import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 // Import Toaster từ thư viện mới
 import { Toaster } from "sonner";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -28,13 +29,20 @@ export default function RootLayout({
           inter.className
         )}
       >
-        <div className="relative flex min-h-screen flex-col">
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
-        </div>
-        {/* Đặt "Loa phát thanh" Sonner ở đây. Nó thông minh và hiệu quả hơn. */}
-        <Toaster richColors />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <div className="relative flex min-h-screen flex-col">
+            <Navbar />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </div>
+          {/* Đặt "Loa phát thanh" Sonner ở đây. Nó thông minh và hiệu quả hơn. */}
+          <Toaster richColors />
+        </ThemeProvider>
       </body>
     </html>
   );

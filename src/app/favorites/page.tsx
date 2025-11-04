@@ -11,35 +11,37 @@ export default function FavoritesPage() {
   const router = useRouter();
   const [isClient, setIsClient] = useState(false);
   const [favorites, setFavorites] = useState<Recipe[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // Tách hàm fetch ra để có thể gọi lại khi bỏ tim
+ // Tách hàm fetch ra để có thể gọi lại khi bỏ tim
   const fetchFavorites = useCallback(async () => {
     if (!accessToken) return;
     try {
-      // Không cần setIsLoading ở đây để tránh giật màn hình khi tải lại
+      // Không cần setLoading ở đây để tránh giật màn hình khi tải lại
       const response = await apiFetch("/favorites/");
       if (!response.ok) {
         throw new Error("Không thể tải danh sách yêu thích của bạn.");
       }
       const data = await response.json();
       setFavorites(data);
+      setError(null); // Xóa lỗi nếu có
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
         setError("Đã có lỗi không xác định xảy ra.");
       }
+      // Trong trường hợp lỗi, không thay đổi danh sách favorites
     } finally {
-      // Chỉ set isLoading false ở lần tải đầu tiên
-      if(isLoading) setIsLoading(false);
+      // Chỉ set initial loading là false ở lần đầu tiên
+      setInitialLoading(false);
     }
-  }, [accessToken, isLoading]);
+  }, [accessToken]);
 
 
   useEffect(() => {
@@ -52,7 +54,12 @@ export default function FavoritesPage() {
     }
   }, [isClient, accessToken, router, fetchFavorites]);
   
-  if (!isClient || isLoading) {
+  // Hàm để xóa một món khỏi danh sách yêu thích mà không cần fetch lại
+  const removeFavorite = useCallback((recipeId: number) => {
+    setFavorites(prev => prev.filter(recipe => recipe.id !== recipeId));
+  }, []);
+  
+  if (!isClient || initialLoading) {
     return <div className="container py-10">Đang tải bộ sưu tập của bạn...</div>;
   }
 
@@ -71,15 +78,15 @@ export default function FavoritesPage() {
                 <RecipeCard 
                     key={recipe.id} 
                     recipe={recipe} 
-                    // SỬA ĐỔI #1: Luôn luôn là true trên trang này
+                    // Luôn đánh dấu là yêu thích vì đang ở trong trang yêu thích
                     isInitiallyFavorited={true}
-                    // SỬA ĐỔI #2: Khi người dùng bỏ tim, hãy tải lại danh sách
-                    onFavoriteToggle={fetchFavorites}
+                    // Khi toggle yêu thích, xóa món khỏi danh sách (vì không còn yêu thích nữa)
+                    onFavoriteToggle={() => removeFavorite(recipe.id)}
                 />
             ))}
         </div>
       ) : (
-        <p>Bạn chưa &apos;thả tim&apos; cho công thức nào cả. Hãy bắt đầu khám phá nhé!</p>
+        <p>Bạn chưa 'thả tim' cho công thức nào cả. Hãy bắt đầu khám phá nhé!</p>
       )}
     </section>
   );
